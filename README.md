@@ -46,7 +46,7 @@ yourself:
 **and run the installer** with the path to that zip:
 
 ```bash
-cd Human-Motion-Benchmark      # the code from the project page (link above)
+cd HumanScore                  # the folder with the code from the project page (link above)
 bash install.sh --smplx-dir ~/Downloads/models_smplx_v1_1.zip
 ```
 
