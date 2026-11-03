@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 150
+
+[project]
+name = "monocular_demos"
+version = "0.1.0"
+description = "MonocularBiomechanics fitting code (MeTRAbs keypoints to a MuJoCo skeleton), as used by HumanScore"
+readme = "README.md"
+requires-python = "~=3.11"
+# Not used by the HumanScore installers, which install the pinned environment of requirements/.
+dependencies = [
+    "jax",
+    "jaxlie",
+    "jmp",
+    "equinox",
+    "tensorflow_hub",
+    "mujoco-mjx",
+    "opencv-python",
+    "optax",
+]
+
+[tool.setuptools.package-data]
+"*" = ["biomechanics_mjx/data/humanoid/**/*"]

@@ -1,0 +1,14 @@
+results/
+__pycache__/
+*.mp4
+*.mov
+*.pth
+outputs/
+.pytest_cache/
+.venv/
+.venv-humanscore/
+.jax_cache/
+.body_kin_cache/
+
+# Default output folder of scripts/humanscore_single.py and scripts/humanscore_multi.py
+humanscore_output/

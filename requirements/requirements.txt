@@ -1,0 +1,19 @@
+# HumanScore - Python dependencies (overview).
+#
+# Do not run `pip install -r requirements.txt`; use an installer (README.md, Install):
+#
+# - ./install.sh (recommended) runs install/install_slim.sh, which installs the hash-pinned
+#   lock-slim.txt (compiled from slim.in: these files without the distributions listed in
+#   slim-excludes.txt) into a uv environment.
+# - install/install.sh (conda) installs, in this order:
+#   1. PyTorch 2.8.0 + torchvision 0.23.0 from https://download.pytorch.org/whl/cu128
+#   2. requirements-base.txt, requirements-gvhmr.txt, requirements-biomechanics.txt and
+#      requirements-hadm.txt in one pip call
+#   3. ultralytics==8.2.42 with --no-deps (it declares numpy<2)
+#   4. PyTorch3D from source (pinned revision, PYTORCH3D_NO_EXTENSION=1)
+#   5. Detectron2 (HADM/) and torch-mesh-isect, compiled by install/build_native.py with NVIDIA's
+#      CUDA 12.8 compiler
+-r requirements-base.txt
+-r requirements-gvhmr.txt
+-r requirements-biomechanics.txt
+-r requirements-hadm.txt

@@ -1,0 +1,26 @@
+# MeTRAbs 3-D keypoints (TensorFlow) and the MuJoCo/MJX skeleton fit (JAX); used by baseline/,
+# metrics/ and hmb/fit_engine.py.
+#
+# GPU: JAX 0.6.2 needs cuDNN >= 9.8. PyTorch 2.8.0 ships cuDNN 9.10, which JAX and TensorFlow
+# share; a PyTorch build that links cuDNN 8 cannot share the environment with GPU JAX.
+
+jax[cuda12]==0.6.2
+jaxlib==0.6.2
+jaxlie==1.5.0
+jax_dataclasses==1.6.2
+jaxtyping==0.3.2
+jmp==0.0.4
+equinox==0.13.0
+optax==0.2.5
+chex==0.1.89
+
+mujoco==3.3.4
+mujoco-mjx==3.3.4
+# Headless MuJoCo rendering (MUJOCO_GL=egl or osmesa) of baseline/main.py's skeleton videos.
+PyOpenGL==3.1.10
+
+tensorflow==2.19.0
+tensorflow-hub==0.16.1
+tf-keras==2.19.0
+ml-dtypes==0.5.1
+protobuf==5.29.5

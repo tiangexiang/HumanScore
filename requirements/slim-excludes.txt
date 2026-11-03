@@ -1,0 +1,33 @@
+# Distributions that lock-slim.txt leaves out although an installed package declares them
+# (uv pip compile --excludes). No HumanScore workload imports or loads any of them: the test suite,
+# scripts/humanscore_single.py (also with --paper-scores and --moving-cam),
+# scripts/humanscore_multi.py with SAM 3.1 and YOLO, hmb.cli doctor / run-all, hmb.batch, and the
+# MeTRAbs download. install_slim.sh installs the lock with --no-deps, so they are not pulled back
+# in; `uv pip check` lists them as missing, which is expected.
+
+# Declared by tensorflow 2.19. MeTRAbs runs a SavedModel; none of these is imported for it.
+tensorboard                     # training dashboard (with tensorboard-data-server, werkzeug, markdown)
+tensorboard-data-server
+werkzeug
+markdown
+grpcio                          # Python gRPC for tf.distribute / tensorboard; TF's own gRPC is in libtensorflow
+libclang                        # C++ API generator tooling
+tensorflow-io-gcs-filesystem    # gs:// file system, loaded only with TF_USE_MODULAR_FILESYSTEM=1
+google-pasta                    # tf_upgrade_v2 source rewriting
+keras                           # Keras 3; TF imports it only if installed. tensorflow_hub uses tf-keras (kept):
+                                # the MeTRAbs loader sets TF_USE_LEGACY_KERAS=1 when Keras 3 is absent
+h5py                            # HDF5 Keras files; TF imports it inside try/except ImportError
+
+# Declared by torch 2.8 (triton) and jax[cuda12] (nvshmem).
+triton                          # torch.compile kernels; nothing is compiled. --with-sam3 adds it (sam3 imports it)
+nvidia-nvshmem-cu12             # NVSHMEM multi-GPU collectives of XLA; JAX preloads it only when installed
+nvidia-cuda-cccl-cu12           # CUDA C++ headers, declared only by nvidia-nvshmem-cu12
+
+# Others.
+opencv-python                   # replaced by opencv-python-headless 4.12.0.88 (slim.in)
+aiohttp                         # fsspec[http] of pytorch-lightning, for checkpoints at http(s) URLs
+tyro                            # command-line helper declared by jaxlie (with docstring-parser, typeguard)
+black                           # code formatter, used only by detectron2's LazyConfig.save
+wheel                           # packaging tool declared by astunparse
+seaborn                         # ultralytics training plots
+ultralytics-thop                # ultralytics FLOP counter (model.info)

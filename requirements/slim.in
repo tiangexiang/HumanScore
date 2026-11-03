@@ -1,0 +1,29 @@
+# HumanScore - inputs of the recommended (uv) environment, compiled into lock-slim.txt.
+#
+# install/install_slim.sh (run by ./install.sh) installs lock-slim.txt with --no-deps, so exactly
+# the locked distributions are installed. slim-excludes.txt lists what is deliberately left out
+# (with the reason for each), slim-overrides.txt the declared pins that are overridden. The
+# versions are those of requirements-*.txt. Regenerate the lock after editing this file (existing
+# pins are kept):
+#
+#   uv pip compile requirements/slim.in --excludes requirements/slim-excludes.txt \
+#       --overrides requirements/slim-overrides.txt --python-version 3.11 \
+#       --python-platform x86_64-manylinux_2_28 --torch-backend cu128 --generate-hashes \
+#       -o requirements/lock-slim.txt
+#
+# Built from source by install_slim.sh, not in the lock: PyTorch3D (Python operators only),
+# Detectron2/HADM and torch-mesh-isect (install/build_native.py). SAM 3.1: lock-slim-sam3.txt.
+
+torch==2.8.0+cu128
+torchvision==0.23.0+cu128
+-r requirements-base.txt
+-r requirements-gvhmr.txt
+-r requirements-biomechanics.txt
+-r requirements-hadm.txt
+# ultralytics declares numpy<2; slim-overrides.txt overrides it (the conda installer,
+# install/install.sh, installs ultralytics with --no-deps instead).
+ultralytics==8.2.42
+# The same OpenCV build as opencv-python, without the Qt GUI (cv2.imshow) and its X11 libraries.
+opencv-python-headless==4.12.0.88
+# pkg_resources (tensorflow_hub, detectron2 LazyConfig, lightning_fabric, sam3) was removed in setuptools 81.
+setuptools<81

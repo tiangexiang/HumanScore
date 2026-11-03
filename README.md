@@ -1,0 +1,186 @@
+HumanScore
+==========
+
+HumanScore checks whether the people in a video move like real humans. It reconstructs the person
+in 3-D and computes six biomechanical plausibility scores. They target the body errors that
+AI-generated videos make: extra limbs, bones that stretch, joints that bend the wrong way, body
+parts that pass through each other, and motion that is too fast or too jerky.
+
+[Project page](https://cs.stanford.edu/~xtiange/projects/humanscore/) ·
+[Paper](https://arxiv.org/abs/2604.20157) · [How each score is computed](docs/metrics.md)
+
+## The six scores
+
+| tier | score | what lowers it |
+|---|---|---|
+| anatomy | extra limbs | an extra hand, arm, leg or foot appears |
+| anatomy | bone length | arms, legs or the trunk get longer or shorter during the video |
+| kinematic | joint range | a joint bends beyond what a human joint can do |
+| kinematic | self-collision | one body part sinks into another (more than just touching it) |
+| kinetic | kinematic extremes | joints turn or limbs move faster than a human can |
+| kinetic | motion smoothness | joints speed up or slow down more abruptly than a human can |
+
+Every score is between 0 and 100, and higher is more plausible. A tier score is the mean of its two
+scores, and the overall score is the mean of all six.
+
+## What you need
+
+* Linux (x86-64) with an NVIDIA GPU: compute capability 7.0 or newer, 16 GB of GPU memory or more
+  (about 30 GB for multi-person tracking with SAM 3.1).
+* An NVIDIA driver for CUDA 12.8 (driver 570 or newer; `nvidia-smi` shows the version).
+* `git`, `curl` and a C/C++ compiler, gcc/g++ 9 to 14. On Ubuntu:
+  `sudo apt-get install git curl build-essential`.
+* About 25 GB of free disk space, and about 4 GB more for multi-person tracking.
+
+The installer itself needs no sudo, conda or CUDA toolkit; it brings everything else.
+
+## Install
+
+**First, get the SMPL-X body model.** Its license does not allow us to ship it, so you download it
+yourself:
+
+1. Register at [smpl-x.is.tue.mpg.de](https://smpl-x.is.tue.mpg.de) and accept the license.
+2. Download "SMPL-X v1.1 (NPZ+PKL)". You get the file `models_smplx_v1_1.zip`.
+
+**Then get the code** from the [project page](https://cs.stanford.edu/~xtiange/projects/humanscore/)
+**and run the installer** with the path to that zip:
+
+```bash
+cd Human-Motion-Benchmark      # the code from the project page (link above)
+bash install.sh --smplx-dir ~/Downloads/models_smplx_v1_1.zip
+```
+
+The installer checks your machine and builds a Python environment in `./.venv-humanscore`. It then
+downloads about 13 GB of model files and checks that everything works. On a fast connection this
+takes about 10 to 20 minutes, mostly for the downloads. When it prints `READY`, you are done.
+
+* If something fails, the installer says what to fix. Fix it and run the same command again:
+  finished steps are skipped and downloads continue where they stopped.
+* If you run it without `--smplx-dir`, it installs everything else, prints `ALMOST READY` and
+  explains the SMPL-X step. Run it again with `--smplx-dir` when you have the zip.
+* `bash install.sh --help` lists all options, and [install/INSTALL.md](install/INSTALL.md)
+  explains them.
+
+**Optional: multi-person videos.** `scripts/humanscore_multi.py` follows each person with the
+SAM 3.1 tracker. Its model is gated, so first request access at
+[huggingface.co/facebook/sam3.1](https://huggingface.co/facebook/sam3.1). Access is approved by
+hand. Then add `--with-sam3`:
+
+```bash
+bash install.sh --smplx-dir ~/Downloads/models_smplx_v1_1.zip --with-sam3
+```
+
+The installer offers to log you in to Hugging Face. On a server, set `HF_TOKEN` instead. If access
+has not been granted yet, the rest of the installation still finishes. You can use
+`--tracker yolo` without SAM 3.1.
+
+## Score a video
+
+Activate the environment in every new terminal, then run the script on your video:
+
+```bash
+source .venv-humanscore/bin/activate
+python scripts/humanscore_single.py video.mp4
+```
+
+A short clip takes a few minutes. The first run takes longer, because it compiles the skeleton fit.
+At the end the script prints a table:
+
+```text
+HumanScore: video.mp4
+  frames analysed: 141 of 141 (sampled at 24 fps, max side 1280 px)
+  person found in 141/141 frames (selection: track)
+
+  tier       metric                score  status
+  ----------------------------------------------
+  anatomy    extra limbs           100.0  ok
+             bone length            98.5  ok
+  kinematic  joint range           100.0  ok
+             self-collision        100.0  ok
+  kinetic    kinematic extremes    100.0  ok
+             motion smoothness     100.0  ok
+  ----------------------------------------------
+             anatomy tier           99.3
+             kinematic tier        100.0
+             kinetic tier          100.0
+             OVERALL                99.8
+```
+
+The results are saved in `humanscore_output/video/`:
+
+| file | what it contains |
+|---|---|
+| `humanscore.json` | the scores, for use in your own code (see below) |
+| `summary.txt` | the table above, with the reason for any missing score |
+| `scores.json` | details for each score (frames flagged, worst frame, ...) |
+| `logs/humanscore.log` | the full log of the run |
+
+The other folders hold the 3-D reconstruction. If you run the same command again, the script reuses
+it and finishes in seconds.
+
+`humanscore.json` holds the same numbers for use in your own code. A score of 100 means nothing
+implausible was found; a score is missing (`status` other than `ok`) when there was too little
+evidence, and `reasons` says why. The scores describe the reconstructed 3-D body, so compare
+videos of similar motions. [docs/usage.md](docs/usage.md) explains every field and option
+(`--moving-cam`, `--paper-scores`, `--out`, ...), and `--help` lists them.
+
+## Several people in a video
+
+```bash
+python scripts/humanscore_multi.py video.mp4                  # SAM 3.1 tracker (needs --with-sam3)
+python scripts/humanscore_multi.py video.mp4 --tracker yolo   # YOLO tracker, no extra setup
+```
+
+Each person is tracked through the video and scored on their own; `summary.txt` in
+`humanscore_output/video_multi/` has one row per person. See [docs/usage.md](docs/usage.md#several-people-in-a-video).
+
+## Problems
+
+Run `python -m hmb.cli doctor`. It checks the packages and model files and says what is missing.
+[install/TROUBLESHOOTING.md](install/TROUBLESHOOTING.md) lists common problems and their fixes.
+
+## Repository layout
+
+```text
+install.sh   one-command installer
+scripts/     humanscore_single.py (one person) and humanscore_multi.py (several people)
+hmb/         the pipeline: reconstruction engines, scoring (hmb/scoring), tracking, command line
+metrics/     the paper's original code of the six metrics
+baseline/    3-D keypoints (MeTRAbs) and the biomechanical skeleton fit
+install/     installer parts, model-file list, installation docs
+docs/        usage details (usage.md) and metric definitions (metrics.md)
+```
+
+## Citation
+
+```bibtex
+@article{fang2026humanscore,
+  title   = {HumanScore: Benchmarking Human Motions in Generated Videos},
+  author  = {Fang, Yusu and Xiang, Tiange and Tan, Tian and Schuetz, Narayan and Delp, Scott and Fei-Fei, Li and Adeli, Ehsan},
+  journal = {arXiv preprint arXiv:2604.20157},
+  year    = {2026}
+}
+```
+
+## License
+
+The code written for HumanScore is released under the [MIT License](LICENSE). HumanScore also
+uses third-party code and model files, which keep their own licenses. Some of them allow only
+non-commercial research use, so please check them before using HumanScore, and cite the
+corresponding work.
+
+| component | used for | license |
+|---|---|---|
+| [MonocularBiomechanics](https://github.com/IntelligentSensingAndRehabilitation/MonocularBiomechanics) (`baseline/`, modified) | 3-D keypoints and skeleton fit | AGPL-3.0 ([`baseline/LICENSE`](baseline/LICENSE)) |
+| [MeTRAbs](https://github.com/isarandi/metrabs) | 3-D keypoint model | code MIT; models for non-commercial use only |
+| [GVHMR](https://github.com/zju3dv/GVHMR) | body mesh | research and non-profit use only (`GVHMR/LICENSE`) |
+| [HMR 2.0](https://github.com/shubham-goel/4D-Humans), [ViTPose](https://github.com/ViTAE-Transformer/ViTPose) | weights used by GVHMR | MIT, Apache-2.0 |
+| [HADM](https://github.com/wangkaihong/HADM) | extra-limb detector | as published by its authors (no license file) |
+| [torch-mesh-isect](https://github.com/vchoutas/torch-mesh-isect) | self-collision (paper scores) | non-commercial scientific research (`torch-mesh-isect/LICENSE`) |
+| [SMPL-X](https://smpl-x.is.tue.mpg.de) | body model | SMPL-X model license, non-commercial research |
+| [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) | person detection and tracking | AGPL-3.0 |
+| [SAM 3.1](https://huggingface.co/facebook/sam3.1) (optional) | multi-person tracking | SAM License |
+| Python packages (PyTorch, TensorFlow, JAX, MuJoCo, ...) | runtime | their own licenses |
+
+[install/assets.json](install/assets.json) lists the source and license of every model file that
+the installer downloads.

@@ -1,0 +1,4 @@
+# Declared requirements that lock-slim.txt overrides (uv pip compile --overrides).
+# ultralytics 8.2.42 declares numpy<2 but works with NumPy 2.1.3 (the conda installer,
+# install/install.sh, installs it with --no-deps for the same reason).
+numpy==2.1.3

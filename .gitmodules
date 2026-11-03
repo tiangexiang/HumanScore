@@ -1,0 +1,12 @@
+[submodule "GVHMR"]
+	path = GVHMR
+	url = https://github.com/zju3dv/GVHMR.git
+[submodule "HADM"]
+	path = HADM
+	url = https://github.com/wangkaihong/HADM.git
+[submodule "metrics/multi-limbs/HADM"]
+	path = metrics/multi-limbs/HADM
+	url = https://github.com/wangkaihong/HADM.git
+[submodule "torch-mesh-isect"]
+	path = torch-mesh-isect
+	url = https://github.com/vchoutas/torch-mesh-isect.git
